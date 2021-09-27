@@ -1,6 +1,4 @@
 import express, { Express } from "express";
-import Keycloak from "keycloak-connect";
-import session from "express-session";
 import * as Sentry from "@sentry/node";
 import * as Tracing from "@sentry/tracing";
 
@@ -41,10 +39,7 @@ class Server {
 
     Server.enableSentry(app);
 
-    const memoryStore = new session.MemoryStore();
-
-    const keycloak = new Keycloak({ store: memoryStore });
-    app.use("/test", keycloak.protect(), AuthenticationRouter);
+    app.use("/", AuthenticationRouter);
 
     app.listen(Server.port, () => {
       console.log(`Server listening on ${Server.port}`);
