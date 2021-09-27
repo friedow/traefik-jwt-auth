@@ -2,22 +2,14 @@ import express from "express";
 import AuthenticationError from "../utils/AuthenticationError";
 
 import keycloak from "keycloak-backend";
-import fs from "fs";
+import CertficateModel from "@/models/Certificate";
 
 export default class AuthenticationService {
-  private static get certificate(): Buffer {
-    return fs.readFileSync("cert.pem");
-  }
-
   private static get keycloakInstance() {
-    return keycloak({
-      realm: "dotbase",
-      "auth-server-url": "http://127.0.0.1:8080",
-      client_id: "traefik-jwt-auth",
-    });
+    return keycloak({});
   }
 
-  public static async authenticate(req: express.Request) {
+  public static async verify(req: express.Request): Promise<void> {
     if (!req.headers.authorization)
       throw new AuthenticationError("Authorization header is missing.");
 
@@ -26,9 +18,22 @@ export default class AuthenticationService {
 
     const accessToken = req.headers.authorization.replace("Bearer ", "");
 
-    if (!accessToken)
-      throw new AuthenticationError("Authorization header is missing an access token.");
+    if (!accessToken) throw new AuthenticationError("Access token is missing.");
 
-    await this.keycloakInstance.jwt.verifyOffline(accessToken, this.certificate);
+    for (const certificate of CertficateModel.certificates) {
+      const tokenIsValid = await this.isValid(accessToken, certificate);
+      if (tokenIsValid) return;
+    }
+
+    throw new AuthenticationError("Access token is invalid.");
+  }
+
+  private static async isValid(accessToken: string, certificate: string): Promise<boolean> {
+    try {
+      await this.keycloakInstance.jwt.verifyOffline(accessToken, certificate);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }

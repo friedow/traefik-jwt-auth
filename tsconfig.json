@@ -17,7 +17,7 @@
       "@/*": ["src/*", "build/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/global.d.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules"],
   "ts-node": {
     "files": true
